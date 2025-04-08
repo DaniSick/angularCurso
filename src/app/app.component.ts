@@ -1,47 +1,84 @@
 import { Component } from '@angular/core';
-import { MatTableModule } from '@angular/material/table';
-import { UsuarioService } from './usuario.service';
+import { CommonModule } from '@angular/common';
 
-export interface IDataTable {
+// Interfaz simple para nuestros datos
+interface Usuario {
+  id: number;
   nombre: string;
-  posicion: number;
-  peso: number;
-  simbolo?: string;
-  email?: string;
+  email: string;
 }
-
-const ELEMENT_DATA: IDataTable[] = [
-  {posicion: 1, nombre: 'Hydrogen', peso: 1.0079, email: 'H'},
-  {posicion: 2, nombre: 'Helium', peso: 4.0026, email: 'He'},
-  {posicion: 3, nombre: 'Lithium', peso: 6.941, email: 'Li'},
-  {posicion: 4, nombre: 'Beryllium', peso: 9.0122, simbolo: 'Be'},
-  {posicion: 5, nombre: 'Boron', peso: 10.811, simbolo: 'B'},
-  {posicion: 6, nombre: 'Carbon', peso: 12.0107, simbolo: 'C'},
-  {posicion: 7, nombre: 'Nitrogen', peso: 14.0067, simbolo: 'N'},
-  {posicion: 8, nombre: 'Oxygen', peso: 15.9994, simbolo: 'O'},
-  {posicion: 9, nombre: 'Fluorine', peso: 18.9984, simbolo: 'F'},
-  {posicion: 10, nombre: 'Neon', peso: 20.1797, simbolo: 'Ne'},
-];
 
 @Component({
   selector: 'app-root',
-  imports: [MatTableModule],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="container">
+      <h1>Lista de Usuarios</h1>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let usuario of usuarios">
+            <td>{{usuario.id}}</td>
+            <td>{{usuario.nombre}}</td>
+            <td>{{usuario.email}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `,
+  styles: [`
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+  `]
 })
 export class AppComponent {
-  usuarios: any[] = [];
-  constructor(private usuarioService:UsuarioService){
-
-  }
-  ngOnInit(): void{
-    //lo que este aqui va ser lo primero en ejecutarse al llamar el componente 
-    this.usuarioService.getUsuarios().subscribe(data => {
-          this.usuarios = data;
-          console.log(this.usuarios);                                                                                                                                            
-    })
-  }
-  displayedColumns: string[] = ['posicion', 'nombre', 'peso', 'simbolo', 'email']
-  dataSource = ELEMENT_DATA;
-  title = 'angularCurso';
+  // Datos de ejemplo
+  usuarios: Usuario[] = [
+    { id: 1, nombre: 'Juan Pérez', email: 'juan@example.com' },
+    { id: 2, nombre: 'María García', email: 'maria@example.com' },
+    { id: 3, nombre: 'Carlos López', email: 'carlos@example.com' }
+  ];
 }

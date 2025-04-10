@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, map, throwError } from 'rxjs';
+import { Observable, catchError, map, tap, throwError } from 'rxjs';
 
 export interface Usuario {
   id?: number;
@@ -25,7 +25,9 @@ export interface PaginatedResponse {
 export class UsuarioService {
   private apiUrl: string = 'http://localhost:3000/users';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    console.log('UsuarioService inicializado - URL API:', this.apiUrl);
+  }
 
   // Obtener usuarios con paginación
   getUsuarios(page: number = 1, perPage: number = 10): Observable<PaginatedResponse> {
@@ -36,36 +38,59 @@ export class UsuarioService {
       .set('per_page', perPage.toString());
     
     return this.http.get<any>(this.apiUrl, { params }).pipe(
+      tap(response => console.log('Respuesta raw de la API:', response)),
       map(response => {
-        console.log('Respuesta original del API:', response);
+        console.log('Analizando respuesta API:', typeof response);
         
-        // Si la respuesta ya tiene el formato esperado
-        if (response && typeof response === 'object' && response.users) {
-          console.log('Respuesta en formato paginado:', response);
+        // Si es un objeto con formato esperado
+        if (response && typeof response === 'object' && 'users' in response) {
+          console.log('Respuesta tiene formato paginado con propiedad users');
           return response as PaginatedResponse;
         }
         
-        // Si la respuesta es un array simple, adaptarlo al formato paginado
+        // Si es un array directo de usuarios
         if (Array.isArray(response)) {
-          console.log('Respuesta es un array, adaptando a formato paginado');
-          return {
+          console.log('Respuesta es un array de usuarios, convirtiendo a formato paginado');
+          const paginatedResponse: PaginatedResponse = {
             users: response,
             total: response.length,
-            page: 1,
-            per_page: response.length,
-            total_pages: 1
+            page: page,
+            per_page: perPage,
+            total_pages: Math.ceil(response.length / perPage)
+          };
+          return paginatedResponse;
+        }
+        
+        // Si es un objeto pero no tiene el formato esperado
+        if (response && typeof response === 'object') {
+          console.warn('Respuesta es un objeto pero sin formato esperado:', response);
+          
+          // Intentar extraer users si existe como propiedad
+          const users = response.users || response.data || response.results || [response];
+          const usersArray = Array.isArray(users) ? users : [users];
+          
+          return {
+            users: usersArray,
+            total: usersArray.length,
+            page: page,
+            per_page: perPage,
+            total_pages: Math.ceil(usersArray.length / perPage)
           };
         }
         
-        // Fallback para cualquier otro formato
-        console.warn('Formato inesperado de respuesta:', response);
+        // Si no se pudo interpretar
+        console.error('No se pudo interpretar la respuesta:', response);
         return {
-          users: Array.isArray(response) ? response : [response],
-          total: Array.isArray(response) ? response.length : 1,
-          page: 1,
-          per_page: 10,
-          total_pages: 1
+          users: [],
+          total: 0,
+          page: page,
+          per_page: perPage,
+          total_pages: 0
         };
+      }),
+      tap(processedResponse => {
+        console.log('Respuesta procesada:', processedResponse);
+        console.log(`Total usuarios: ${processedResponse.users.length}, Página: ${processedResponse.page}/${processedResponse.total_pages}`);
       }),
       catchError(this.handleError)
     );
@@ -117,6 +142,7 @@ export class UsuarioService {
       }
     }
     
+    console.error(errorMessage);
     return throwError(() => new Error(errorMessage));
   }
 }

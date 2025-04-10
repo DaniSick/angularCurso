@@ -1,17 +1,68 @@
 /* You can add global styles to this file, and also import other style files */
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
 
-@import 'app/styles/snackbar-styles.css';
-
-body {
+html, body { 
+  height: 100%; 
   margin: 0;
-  padding: 0;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
   background-color: #f5f5f5;
+  color: rgba(0, 0, 0, 0.87);
 }
 
-/* Estilos para la paginación */
+.mat-mdc-table {
+  width: 100%;
+  background-color: white;
+}
+
+.mat-mdc-header-row {
+  background-color: #3f51b5;
+}
+
+.mat-mdc-header-cell {
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 0 16px;
+}
+
+.mat-mdc-cell {
+  font-size: 14px;
+  padding: 0 16px;
+}
+
+.mat-mdc-row:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.mat-mdc-row:hover {
+  background-color: #f1f1f1;
+}
+
+.error-snackbar {
+  background: #f44336;
+  color: white;
+}
+
+.success-snackbar {
+  background: #4caf50;
+  color: white;
+}
+
+.container {
+  padding: 16px;
+}
+
+/* Estilos para el paginador */
 .mat-mdc-paginator {
-  background-color: transparent;
+  background-color: white;
+}
+
+/* Estilos para el spinner de carga */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px;
 }
 
 /* Animaciones para las transiciones de estado */

@@ -1,5 +1,11 @@
 <div class="container">
-  <h1>Lista de Usuarios</h1>
+  <h1 style="font-size: 28px; color: #e91e63; text-align: center; margin: 20px 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">TABLA DE USUARIOS</h1>
+  
+  <div class="debug-info" style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #dee2e6;">
+    <p><strong>Estado de carga:</strong> {{ isLoading ? 'Cargando...' : 'Completado' }}</p>
+    <p><strong>Registros cargados:</strong> {{ dataSource.length }}</p>
+    <p><strong>Error:</strong> {{ errorMessage || 'Ninguno' }}</p>
+  </div>
   
   <div class="controls">
     <button mat-raised-button color="primary" (click)="loadUsers()">
@@ -21,7 +27,34 @@
     <button mat-raised-button color="primary" (click)="loadUsers()">Reintentar</button>
   </div>
   
-  <div *ngIf="!isLoading && !errorMessage" class="table-container">
+  <!-- Tabla HTML básica (como fallback) -->
+  <div *ngIf="!isLoading && !errorMessage && dataSource.length > 0" class="table-container">
+    <table class="basic-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Password</th>
+          <th>Creado</th>
+          <th>Actualizado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of dataSource">
+          <td>{{ user.id }}</td>
+          <td>{{ user.name }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.password }}</td>
+          <td>{{ user.created_at | date:'medium' }}</td>
+          <td>{{ user.updated_at | date:'medium' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Material Table (puede dar problemas si hay conflictos de versiones) -->
+  <div *ngIf="!isLoading && !errorMessage && dataSource.length > 0" class="table-container mat-table-container" style="display:none;">
     <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
       <!-- ID Column -->
       <ng-container matColumnDef="id">
@@ -59,22 +92,13 @@
         <td mat-cell *matCellDef="let user">{{ user.updated_at | date:'medium' }}</td>
       </ng-container>
       
-      <!-- Actions Column -->
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>Acciones</th>
-        <td mat-cell *matCellDef="let user">
-          <button mat-icon-button color="warn" (click)="eliminarUsuario(user.id)" matTooltip="Eliminar usuario">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </td>
-      </ng-container>
-      
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
     
     <!-- Paginador -->
     <mat-paginator
+      *ngIf="dataSource.length > 0"
       [length]="totalItems"
       [pageSize]="pageSize"
       [pageSizeOptions]="pageSizeOptions"
@@ -83,5 +107,52 @@
       aria-label="Seleccionar página">
     </mat-paginator>
   </div>
+  
+  <div *ngIf="!isLoading && !errorMessage && dataSource.length === 0" class="no-data">
+    <mat-icon color="warn">info</mat-icon>
+    <p>No hay datos disponibles. Tabla vacía.</p>
+  </div>
+  
+  <div class="button-container" style="margin-top: 30px; text-align: center;">
+    <button mat-raised-button color="primary" (click)="testRenderizing()">
+      Probar renderizado
+    </button>
+  </div>
 </div>
+
+<style>
+  .basic-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  .basic-table th, .basic-table td {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  
+  .basic-table th {
+    background-color: #3f51b5;
+    color: white;
+    font-weight: bold;
+  }
+  
+  .basic-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  .basic-table tr:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 20px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    margin-top: 20px;
+  }
+</style>
 

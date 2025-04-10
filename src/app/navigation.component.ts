@@ -20,6 +20,9 @@ import { RouterModule } from '@angular/router';
       <a mat-button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
         <mat-icon>people</mat-icon> Usuarios
       </a>
+      <a mat-button routerLink="/basic-table" routerLinkActive="active">
+        <mat-icon>grid_on</mat-icon> Tabla Básica
+      </a>
       <a mat-button routerLink="/simple-test" routerLinkActive="active">
         <mat-icon>table_chart</mat-icon> Test Simple
       </a>

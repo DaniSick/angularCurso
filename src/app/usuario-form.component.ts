@@ -100,7 +100,7 @@ export class UsuarioFormComponent {
 
   onSubmit(): void {
     if (this.form.valid) {
-      // Crear un objeto con los datos del formulario
+      // Crear una copia parcial del usuario para evitar el problema con 'delete'
       const usuarioData: Partial<Usuario> = {
         name: this.form.value.name,
         email: this.form.value.email

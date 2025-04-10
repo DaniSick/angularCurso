@@ -7,7 +7,8 @@ import { SimpleApiCheckerComponent } from './simple-api-checker.component';
 import { SimpleDataTestComponent } from './simple-data-test.component';
 
 export const routes: Routes = [
-  { path: '', component: AppComponent },
+  { path: '', redirectTo: 'users', pathMatch: 'full' },
+  { path: 'users', component: AppComponent },
   { path: 'api-test', component: ApiTestComponent },
   { path: 'api-checker', component: SimpleApiCheckerComponent },
   { path: 'api-seed', component: ApiSeedComponent },

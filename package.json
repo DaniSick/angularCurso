@@ -6,7 +6,19 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "start:all": "node scripts/init-project.js",
+    "start:backend": "node backend/server.js",
+    "db:sync": "node scripts/syncDatabase.js",
+    "db:seed": "node scripts/seedDatabase.js",
+    "db:check": "node scripts/check-postgres-tables.js",
+    "db:reset-password": "node scripts/reset-postgres-password.js",
+    "db:reset-password-direct": "node scripts/reset-postgres-password-direct.js",
+    "db:basic-check": "node scripts/check-database-basic.js",
+    "db:direct-check": "node scripts/direct-check.js",
+    "db:inspect": "node scripts/inspect-postgres-container.js",
+    "db:manual-config": "node scripts/create-manual-config.js",
+    "verify-postgres": "node scripts/verify-postgres-connection.js"
   },
   "private": true,
   "dependencies": {
@@ -19,12 +31,13 @@
     "@angular/platform-browser-dynamic": "^19.2.0",
     "@angular/router": "^19.2.0",
     "express": "^4.21.2",
-    "pg": "^8.14.1",
+    "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
     "rxjs": "~7.8.0",
     "sequelize": "^6.37.6",
     "tslib": "^2.3.0",
-    "zone.js": "~0.15.0"
+    "zone.js": "~0.15.0",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^19.2.1",

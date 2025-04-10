@@ -1,0 +1,13 @@
+.success-snackbar {
+  background-color: #43a047;
+  color: white;
+}
+
+.error-snackbar {
+  background-color: #f44336;
+  color: white;
+}
+
+.mat-simple-snackbar-action {
+  color: white;
+}

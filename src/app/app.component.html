@@ -1,158 +1,135 @@
-<div class="container">
-  <h1 style="font-size: 28px; color: #e91e63; text-align: center; margin: 20px 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">TABLA DE USUARIOS</h1>
-  
-  <div class="debug-info" style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #dee2e6;">
-    <p><strong>Estado de carga:</strong> {{ isLoading ? 'Cargando...' : 'Completado' }}</p>
-    <p><strong>Registros cargados:</strong> {{ dataSource.length }}</p>
-    <p><strong>Error:</strong> {{ errorMessage || 'Ninguno' }}</p>
+<div class="users-dashboard">
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <h1>Gestión de Usuarios</h1>
+    <div class="header-actions">
+      <button class="btn primary" (click)="openCreateDialog()">
+        <i class="material-icons">person_add</i>
+        Nuevo Usuario
+      </button>
+      <button class="btn secondary" (click)="loadUsers()">
+        <i class="material-icons">refresh</i>
+        Recargar
+      </button>
+    </div>
   </div>
-  
-  <div class="controls">
-    <button mat-raised-button color="primary" (click)="loadUsers()">
-      <mat-icon>refresh</mat-icon> Cargar desde DB
-    </button>
-    <button mat-raised-button color="accent" (click)="loadMockData()">
-      <mat-icon>data_array</mat-icon> Datos de ejemplo
-    </button>
+
+  <!-- Status Panel -->
+  <div class="status-panel">
+    <div class="status-item">
+      <span class="status-label">Estado:</span>
+      <span class="status-value" [ngClass]="{'status-loading': loading, 'status-error': !!error}">
+        {{loading ? 'Cargando...' : error ? 'Error' : 'Cargado'}}
+      </span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Total de usuarios:</span>
+      <span class="status-value">{{dataSource.data.length ? totalUsers : 0}}</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Última actualización:</span>
+      <span class="status-value">{{lastLoadTime | date:'medium'}}</span>
+    </div>
   </div>
-  
-  <div *ngIf="isLoading" class="loading-container">
-    <mat-spinner diameter="40"></mat-spinner>
-    <p>Cargando datos...</p>
+
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Cargando usuarios...</p>
   </div>
-  
-  <div *ngIf="errorMessage" class="error-container">
-    <mat-icon color="warn">error</mat-icon>
-    <p>{{ errorMessage }}</p>
-    <button mat-raised-button color="primary" (click)="loadUsers()">Reintentar</button>
+
+  <!-- Error State -->
+  <div class="error-container" *ngIf="error">
+    <i class="material-icons error-icon">error_outline</i>
+    <h3>Ha ocurrido un error</h3>
+    <p>{{ error }}</p>
+    <button class="btn primary" (click)="loadUsers()">Intentar nuevamente</button>
   </div>
-  
-  <!-- Tabla HTML básica (como fallback) -->
-  <div *ngIf="!isLoading && !errorMessage && dataSource.length > 0" class="table-container">
-    <table class="basic-table">
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && !error && dataSource.data.length === 0">
+    <i class="material-icons empty-icon">people_outline</i>
+    <h3>No hay usuarios</h3>
+    <p>No se encontraron usuarios en la base de datos.</p>
+    <div class="empty-actions">
+      <button class="btn primary" (click)="openCreateDialog()">
+        <i class="material-icons">person_add</i>
+        Agregar usuario
+      </button>
+      <button class="btn secondary" (click)="loadMockData()">
+        <i class="material-icons">data_array</i>
+        Cargar datos de prueba
+      </button>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="users-table-container" *ngIf="!loading && !error && dataSource.data.length > 0">
+    <table class="users-table">
       <thead>
         <tr>
           <th>ID</th>
           <th>Nombre</th>
           <th>Email</th>
-          <th>Password</th>
-          <th>Creado</th>
-          <th>Actualizado</th>
+          <th>Fecha de Creación</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let user of dataSource">
-          <td>{{ user.id }}</td>
-          <td>{{ user.name }}</td>
-          <td>{{ user.email }}</td>
-          <td>{{ user.password }}</td>
-          <td>{{ user.created_at | date:'medium' }}</td>
-          <td>{{ user.updated_at | date:'medium' }}</td>
+        <tr *ngFor="let usuario of dataSource.connect() | async">
+          <td>{{ usuario.id }}</td>
+          <td>{{ usuario.name }}</td>
+          <td>{{ usuario.email }}</td>
+          <td>{{ usuario.created_at | date:'medium' }}</td>
+          <td class="actions-cell">
+            <button class="btn-icon edit" (click)="openEditDialog(usuario)">
+              <i class="material-icons">edit</i>
+            </button>
+            <button class="btn-icon delete" (click)="openDeleteDialog(usuario)">
+              <i class="material-icons">delete</i>
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
-  </div>
-  
-  <!-- Material Table (puede dar problemas si hay conflictos de versiones) -->
-  <div *ngIf="!isLoading && !errorMessage && dataSource.length > 0" class="table-container mat-table-container" style="display:none;">
-    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
-      <!-- ID Column -->
-      <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef>ID</th>
-        <td mat-cell *matCellDef="let user">{{ user.id }}</td>
-      </ng-container>
-      
-      <!-- Name Column -->
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>Nombre</th>
-        <td mat-cell *matCellDef="let user">{{ user.name }}</td>
-      </ng-container>
-      
-      <!-- Email Column -->
-      <ng-container matColumnDef="email">
-        <th mat-header-cell *matHeaderCellDef>Email</th>
-        <td mat-cell *matCellDef="let user">{{ user.email }}</td>
-      </ng-container>
-      
-      <!-- Password Column -->
-      <ng-container matColumnDef="password">
-        <th mat-header-cell *matHeaderCellDef>Contraseña</th>
-        <td mat-cell *matCellDef="let user">{{ user.password }}</td>
-      </ng-container>
-      
-      <!-- Created At Column -->
-      <ng-container matColumnDef="created_at">
-        <th mat-header-cell *matHeaderCellDef>Creado</th>
-        <td mat-cell *matCellDef="let user">{{ user.created_at | date:'medium' }}</td>
-      </ng-container>
-      
-      <!-- Updated At Column -->
-      <ng-container matColumnDef="updated_at">
-        <th mat-header-cell *matHeaderCellDef>Actualizado</th>
-        <td mat-cell *matCellDef="let user">{{ user.updated_at | date:'medium' }}</td>
-      </ng-container>
-      
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
-    
-    <!-- Paginador -->
-    <mat-paginator
-      *ngIf="dataSource.length > 0"
-      [length]="totalItems"
-      [pageSize]="pageSize"
-      [pageSizeOptions]="pageSizeOptions"
-      [pageIndex]="currentPage"
-      (page)="handlePageEvent($event)"
-      aria-label="Seleccionar página">
-    </mat-paginator>
-  </div>
-  
-  <div *ngIf="!isLoading && !errorMessage && dataSource.length === 0" class="no-data">
-    <mat-icon color="warn">info</mat-icon>
-    <p>No hay datos disponibles. Tabla vacía.</p>
-  </div>
-  
-  <div class="button-container" style="margin-top: 30px; text-align: center;">
-    <button mat-raised-button color="primary" (click)="testRenderizing()">
-      Probar renderizado
-    </button>
-  </div>
-</div>
 
-<style>
-  .basic-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-  }
-  
-  .basic-table th, .basic-table td {
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    text-align: left;
-  }
-  
-  .basic-table th {
-    background-color: #3f51b5;
-    color: white;
-    font-weight: bold;
-  }
-  
-  .basic-table tr:nth-child(even) {
-    background-color: #f9f9f9;
-  }
-  
-  .basic-table tr:hover {
-    background-color: #f1f1f1;
-  }
-  
-  .no-data {
-    text-align: center;
-    padding: 20px;
-    background-color: #f5f5f5;
-    border-radius: 4px;
-    margin-top: 20px;
-  }
-</style>
+    <!-- Pagination Controls -->
+    <div class="pagination-controls">
+      <button class="btn-page" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+        <i class="material-icons">chevron_left</i>
+      </button>
+      
+      <div class="page-info">
+        Página {{ currentPage }} de {{ totalPages }}
+      </div>
+      
+      <button class="btn-page" [disabled]="currentPage >= totalPages" (click)="changePage(currentPage + 1)">
+        <i class="material-icons">chevron_right</i>
+      </button>
+      
+      <div>
+        <select class="page-size-select" [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+          <option [value]="5">5 por página</option>
+          <option [value]="10">10 por página</option>
+          <option [value]="25">25 por página</option>
+          <option [value]="50">50 por página</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Debug Tools -->
+  <details class="debug-tools">
+    <summary>Herramientas de Depuración</summary>
+    <div class="debug-content">
+      <p><strong>URL de API:</strong> {{ apiUrl }}</p>
+      <p><strong>Página actual:</strong> {{ currentPage }}</p>
+      <p><strong>Elementos por página:</strong> {{ pageSize }}</p>
+      <p><strong>Total de registros:</strong> {{ totalUsers }}</p>
+      <p><strong>Total de páginas:</strong> {{ totalPages }}</p>
+      <p><strong>Última respuesta API (primera página):</strong></p>
+      <pre>{{ lastApiResponse | json }}</pre>
+    </div>
+  </details>
+</div>
 

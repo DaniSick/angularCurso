@@ -1,163 +1,205 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { PageEvent } from '@angular/material/paginator';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { DataSource } from '@angular/cdk/collections';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import { UsuarioService, Usuario } from './usuario.service';
+
+/**
+ * Data source para la tabla de usuarios que implementa paginación básica
+ */
+class UsersDataSource extends DataSource<Usuario> {
+  private _dataStream = new BehaviorSubject<Usuario[]>([]);
+
+  constructor() {
+    super();
+  }
+
+  connect(): Observable<Usuario[]> {
+    return this._dataStream.asObservable();
+  }
+
+  disconnect() {
+    this._dataStream.complete();
+  }
+
+  get data(): Usuario[] {
+    return this._dataStream.value;
+  }
+
+  set data(data: Usuario[]) {
+    this._dataStream.next(data);
+  }
+}
 
 @Component({
   selector: 'app-component',
-  standalone: false,
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.css'],
+  standalone: true,
+  imports: [CommonModule, FormsModule]
 })
-export class AppComponent implements OnInit, AfterViewInit {
-  displayedColumns: string[] = ['id', 'name', 'email', 'password', 'created_at', 'updated_at', 'actions'];
-  dataSource: Usuario[] = [];
-  isLoading = false;
-  errorMessage: string | null = null;
+export class AppComponent implements OnInit {
+  // Estado actual de la aplicación
+  loading = false;
+  error: string | null = null;
+  lastLoadTime = new Date();
+  apiUrl = 'http://localhost:3000/api/users';
   
-  // Paginación
-  currentPage = 0;
+  // Variables para la paginación
+  currentPage = 1;
   pageSize = 10;
-  pageSizeOptions = [5, 10, 25, 50, 100];
-  totalItems = 0;
+  totalUsers = 0;
+  totalPages = 0;
   
-  constructor(
-    private usuarioService: UsuarioService,
-    private snackBar: MatSnackBar
-  ) {
-    console.log('AppComponent constructor ejecutado');
-  }
+  // Datos y DataSource para la tabla
+  dataSource = new UsersDataSource();
+  lastApiResponse: any = null;
+  
+  constructor(private http: HttpClient, private usuarioService: UsuarioService) {}
 
   ngOnInit(): void {
-    console.log('AppComponent ngOnInit ejecutado');
-    setTimeout(() => {
-      this.loadUsers();
-    }, 500);
-  }
-  
-  ngAfterViewInit(): void {
-    console.log('AppComponent ngAfterViewInit ejecutado');
+    this.loadUsers();
   }
 
+  /**
+   * Carga los usuarios desde la API
+   */
   loadUsers(): void {
-    this.isLoading = true;
-    this.errorMessage = null;
+    this.loading = true;
+    this.error = null;
     
-    console.log('Cargando usuarios desde API...');
-    
-    this.usuarioService.getUsuarios(this.currentPage + 1, this.pageSize).subscribe({
+    this.usuarioService.getUsuarios(this.currentPage, this.pageSize).subscribe({
       next: (response) => {
-        console.log('Respuesta API obtenida:', response);
-        if (response && response.users) {
-          this.dataSource = response.users;
-          this.totalItems = response.total;
-          console.log(`Cargados ${this.dataSource.length} usuarios de ${this.totalItems} totales`);
-        } else if (Array.isArray(response)) {
-          // Si la respuesta es un array simple
-          this.dataSource = response;
-          this.totalItems = response.length;
-          console.log(`Cargados ${this.dataSource.length} usuarios (array directo)`);
-        } else {
-          console.warn('Formato de respuesta API inesperado:', response);
-          this.dataSource = [];
-          this.errorMessage = 'Formato de datos inesperado';
-        }
-        this.isLoading = false;
+        this.lastLoadTime = new Date();
+        this.lastApiResponse = response;
         
-        // Si no hay datos, mostrar mensaje de depuración
-        if (this.dataSource.length === 0) {
-          console.warn('No se encontraron datos de usuarios en la respuesta');
-          this.showMessage('No se encontraron usuarios en la base de datos', false);
+        try {
+          if (response && Array.isArray(response.users)) {
+            // Formato paginado esperado desde el backend
+            this.dataSource.data = response.users;
+            this.totalUsers = response.total || response.users.length;
+          } else if (Array.isArray(response)) {
+            // Array directo de usuarios
+            this.dataSource.data = response;
+            this.totalUsers = response.length;
+          } else {
+            throw new Error('Formato de respuesta inesperado');
+          }
+          
+          // Calcular el total de páginas
+          this.totalPages = Math.ceil(this.totalUsers / this.pageSize);
+          
+          console.log(`Usuarios cargados: ${this.dataSource.data.length}`);
+          console.log(`Total de usuarios: ${this.totalUsers}`);
+          console.log(`Páginas: ${this.totalPages}`);
+          
+        } catch (error) {
+          const err = error as Error;
+          this.error = `Error al procesar los datos: ${err.message}`;
+          console.error('Error procesando datos:', err);
+          this.dataSource.data = [];
         }
       },
-      error: (error) => {
-        console.error('Error cargando usuarios:', error);
-        this.errorMessage = `Error al cargar usuarios: ${error.message}`;
-        this.isLoading = false;
-        this.dataSource = [];
+      error: (err) => {
+        this.error = `Error al cargar usuarios: ${err.message}`;
+        console.error('Error en API:', err);
+        this.dataSource.data = [];
+      },
+      complete: () => {
+        this.loading = false;
       }
     });
   }
   
+  /**
+   * Carga datos de ejemplo para la tabla
+   */
   loadMockData(): void {
-    console.log('Cargando datos de ejemplo...');
-    this.dataSource = [
-      {
-        id: 1,
-        name: 'Usuario Ejemplo',
-        email: 'ejemplo@test.com',
-        password: 'contraseña123',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: 2,
-        name: 'Otro Usuario',
-        email: 'otro@test.com',
-        password: 'otraclave456',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: 3,
-        name: 'Tercer Usuario',
-        email: 'tercero@test.com',
-        password: 'clave789',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ];
-    this.totalItems = this.dataSource.length;
-    this.currentPage = 0;
-    this.showMessage('Datos de ejemplo cargados correctamente');
-  }
-  
-  testRenderizing(): void {
-    console.log('Probando renderizado...');
-    this.showMessage('Probando renderizado: ' + (this.dataSource.length > 0 ? 'Hay datos' : 'No hay datos'));
-    console.log('Estado actual:');
-    console.log('- isLoading:', this.isLoading);
-    console.log('- errorMessage:', this.errorMessage);
-    console.log('- dataSource.length:', this.dataSource.length);
-    console.log('- displayedColumns:', this.displayedColumns);
+    const mockUsers: Usuario[] = [];
     
-    // Comprobar si hay datos
-    if (this.dataSource.length > 0) {
-      console.log('Primer registro:', this.dataSource[0]);
+    for (let i = 1; i <= 20; i++) {
+      const date = new Date();
+      mockUsers.push({
+        id: i,
+        name: `Usuario de Prueba ${i}`,
+        email: `usuario${i}@ejemplo.com`,
+        password: `clave${i}`,
+        created_at: date.toISOString(),
+        updated_at: date.toISOString()
+      });
     }
     
-    // Intentar cargar datos de ejemplo para verificar si el problema es de renderizado
-    if (this.dataSource.length === 0) {
-      this.loadMockData();
-    }
+    this.dataSource.data = mockUsers;
+    this.totalUsers = mockUsers.length;
+    this.totalPages = Math.ceil(this.totalUsers / this.pageSize);
+    this.lastLoadTime = new Date();
+    this.error = null;
+    
+    console.log('Datos de ejemplo cargados:', mockUsers.length);
   }
   
-  handlePageEvent(event: PageEvent): void {
-    console.log('Evento de paginación:', event);
-    this.pageSize = event.pageSize;
-    this.currentPage = event.pageIndex;
+  /**
+   * Cambia a la página especificada
+   */
+  changePage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    
+    this.currentPage = page;
     this.loadUsers();
   }
   
-  eliminarUsuario(id: number): void {
-    if (confirm('¿Está seguro de eliminar este usuario?')) {
-      this.usuarioService.deleteUsuario(id).subscribe({
-        next: () => {
-          this.showMessage('Usuario eliminado con éxito');
-          this.loadUsers();
-        },
-        error: (error) => {
-          console.error('Error eliminando usuario:', error);
-          this.showMessage(`Error al eliminar: ${error.message}`, true);
-        }
-      });
+  /**
+   * Maneja el cambio de tamaño de página
+   */
+  onPageSizeChange(): void {
+    this.currentPage = 1; // Resetear a primera página
+    this.loadUsers();
+  }
+  
+  /**
+   * Abre el diálogo de creación de usuario
+   */
+  openCreateDialog(): void {
+    // Implementación pendiente - Abrirá un diálogo para crear usuario
+    alert('Funcionalidad de crear usuario en desarrollo');
+  }
+  
+  /**
+   * Abre el diálogo de edición de usuario
+   */
+  openEditDialog(usuario: Usuario): void {
+    // Implementación pendiente - Abrirá un diálogo para editar usuario
+    alert(`Editar usuario: ${usuario.name} (ID: ${usuario.id})`);
+  }
+  
+  /**
+   * Abre el diálogo de confirmación de eliminación
+   */
+  openDeleteDialog(usuario: Usuario): void {
+    if (confirm(`¿Está seguro que desea eliminar al usuario: ${usuario.name}?`)) {
+      this.eliminarUsuario(usuario.id || 0);
     }
   }
   
-  showMessage(message: string, isError: boolean = false): void {
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 5000,
-      panelClass: isError ? ['error-snackbar'] : ['success-snackbar']
+  /**
+   * Elimina un usuario por su ID
+   */
+  eliminarUsuario(id: number): void {
+    if (id <= 0) return;
+    
+    this.loading = true;
+    this.usuarioService.deleteUsuario(id).subscribe({
+      next: () => {
+        console.log(`Usuario ${id} eliminado correctamente`);
+        this.loadUsers(); // Recargar datos
+      },
+      error: (err) => {
+        this.error = `Error al eliminar usuario: ${err.message}`;
+        console.error('Error eliminando usuario:', err);
+        this.loading = false;
+      }
     });
   }
 }

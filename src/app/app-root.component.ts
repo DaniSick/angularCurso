@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, RouterModule } from '@angular/router';
 import { NavigationComponent } from './navigation.component';
 
 @Component({
@@ -9,11 +9,25 @@ import { NavigationComponent } from './navigation.component';
   imports: [
     CommonModule,
     RouterOutlet,
+    RouterModule,
     NavigationComponent
   ],
   template: `
     <app-navigation></app-navigation>
-    <router-outlet></router-outlet>
-  `
+    <div class="content-container">
+      <router-outlet></router-outlet>
+    </div>
+  `,
+  styles: [`
+    .content-container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+  `]
 })
-export class AppRootComponent {}
+export class AppRootComponent {
+  constructor() {
+    console.log('AppRootComponent inicializado - Este es el componente raíz de la aplicación');
+  }
+}

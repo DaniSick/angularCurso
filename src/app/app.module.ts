@@ -1,64 +1,38 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { CommonModule } from '@angular/common';
-import { AppRoutingModule } from './app-routing.module';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { AppRoutingModule } from './app-routing.module';
 
-// Componentes de la aplicación
-import { AppComponent } from './app.component';
+// Componentes de la aplicación (AppComponent ahora es standalone)
 import { AppMainComponent } from './app.main.component';
 import { NavigationComponent } from './navigation.component';
 
-// Módulos de Angular Material
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSortModule } from '@angular/material/sort';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatCardModule } from '@angular/material/card';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
+// Servicios
+import { UsuarioService } from './usuario.service';
 
 @NgModule({
   declarations: [
-    AppComponent, 
+    // AppComponent ya no está aquí porque ahora es standalone
     AppMainComponent
   ],
   imports: [
-    // Módulos Angular Core
+    // Módulos core de Angular
     BrowserModule,
     BrowserAnimationsModule,
     CommonModule,
-    FormsModule,
     HttpClientModule,
+    FormsModule,
+    RouterModule,
     AppRoutingModule,
     
-    // Componentes Standalone
-    NavigationComponent,
-    
-    // Módulos Angular Material
-    MatTableModule,
-    MatPaginatorModule,
-    MatButtonModule,
-    MatProgressSpinnerModule,
-    MatIconModule,
-    MatSnackBarModule,
-    MatDialogModule,
-    MatTooltipModule,
-    MatSortModule,
-    MatToolbarModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule
+    // Componentes standalone
+    NavigationComponent
   ],
-  providers: [],
+  providers: [UsuarioService],
   bootstrap: [AppMainComponent]
 })
-export class AppModule {}
+export class AppModule { }

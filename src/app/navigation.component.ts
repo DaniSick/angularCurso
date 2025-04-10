@@ -1,49 +1,95 @@
 import { Component } from '@angular/core';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-navigation',
   standalone: true,
   imports: [
-    MatToolbarModule,
-    MatButtonModule,
-    MatIconModule,
-    RouterModule
+    RouterModule,
+    CommonModule
   ],
   template: `
-    <mat-toolbar color="primary">
-      <span>Angular Users Admin</span>
-      <span class="spacer"></span>
-      <a mat-button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-        <mat-icon>people</mat-icon> Usuarios
-      </a>
-      <a mat-button routerLink="/basic-table" routerLinkActive="active">
-        <mat-icon>grid_on</mat-icon> Tabla Básica
-      </a>
-      <a mat-button routerLink="/simple-test" routerLinkActive="active">
-        <mat-icon>table_chart</mat-icon> Test Simple
-      </a>
-      <a mat-button routerLink="/api-checker" routerLinkActive="active">
-        <mat-icon>search</mat-icon> API Checker
-      </a>
-      <a mat-button routerLink="/api-seed" routerLinkActive="active">
-        <mat-icon>settings</mat-icon> Admin DB
-      </a>
-      <a mat-button routerLink="/api-test" routerLinkActive="active">
-        <mat-icon>bug_report</mat-icon> Test API
-      </a>
-    </mat-toolbar>
+    <nav class="navbar">
+      <div class="navbar-brand">Angular Users Admin</div>
+      <div class="navbar-links">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+          Usuarios
+        </a>
+        <a routerLink="/basic-table" routerLinkActive="active" class="nav-link">
+          Tabla Básica
+        </a>
+        <a routerLink="/simple-test" routerLinkActive="active" class="nav-link">
+          Test Simple
+        </a>
+        <a routerLink="/api-checker" routerLinkActive="active" class="nav-link">
+          API Checker
+        </a>
+        <a routerLink="/api-seed" routerLinkActive="active" class="nav-link">
+          Admin DB
+        </a>
+        <a routerLink="/api-test" routerLinkActive="active" class="nav-link">
+          Test API
+        </a>
+      </div>
+    </nav>
   `,
   styles: [`
-    .spacer {
-      flex: 1 1 auto;
+    .navbar {
+      background-color: #3f51b5;
+      color: white;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      height: 64px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .navbar-brand {
+      font-size: 20px;
+      font-weight: 500;
+      margin-right: 32px;
+    }
+    
+    .navbar-links {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+      display: block;
+    }
+    
+    .nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.1);
     }
     
     .active {
       background-color: rgba(255, 255, 255, 0.15);
+    }
+    
+    /* Responsivo para pantallas pequeñas */
+    @media (max-width: 768px) {
+      .navbar {
+        flex-direction: column;
+        height: auto;
+        padding: 16px;
+      }
+      
+      .navbar-brand {
+        margin-right: 0;
+        margin-bottom: 16px;
+      }
+      
+      .navbar-links {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
     }
   `]
 })

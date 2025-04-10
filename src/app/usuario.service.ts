@@ -1,144 +1,123 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, map, tap, throwError } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, retry } from 'rxjs/operators';
 
 export interface Usuario {
   id?: number;
   name: string;
   email: string;
   password: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface PaginatedResponse {
-  users: Usuario[];
+export interface PaginatedResponse<T> {
+  users: T[];
   total: number;
   page: number;
-  per_page: number;
-  total_pages: number;
+  limit: number;
+  pages: number;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class UsuarioService {
-  private apiUrl: string = 'http://localhost:3000/users';
+  private apiUrl = 'http://localhost:3000/api/users';
 
-  constructor(private http: HttpClient) {
-    console.log('UsuarioService inicializado - URL API:', this.apiUrl);
-  }
+  constructor(private http: HttpClient) { }
 
-  // Obtener usuarios con paginación
-  getUsuarios(page: number = 1, perPage: number = 10): Observable<PaginatedResponse> {
-    console.log(`UsuarioService: Solicitando datos desde: ${this.apiUrl} (página ${page}, ${perPage} por página)`);
-    
-    let params = new HttpParams()
+  /**
+   * Obtiene usuarios con paginación
+   * @param page Número de página (comienza en 1)
+   * @param limit Cantidad de elementos por página
+   * @returns Observable con la respuesta paginada
+   */
+  getUsuarios(page = 1, limit = 10): Observable<any> {
+    const params = new HttpParams()
       .set('page', page.toString())
-      .set('per_page', perPage.toString());
+      .set('limit', limit.toString());
     
-    return this.http.get<any>(this.apiUrl, { params }).pipe(
-      tap(response => console.log('Respuesta raw de la API:', response)),
-      map(response => {
-        console.log('Analizando respuesta API:', typeof response);
-        
-        // Si es un objeto con formato esperado
-        if (response && typeof response === 'object' && 'users' in response) {
-          console.log('Respuesta tiene formato paginado con propiedad users');
-          return response as PaginatedResponse;
-        }
-        
-        // Si es un array directo de usuarios
-        if (Array.isArray(response)) {
-          console.log('Respuesta es un array de usuarios, convirtiendo a formato paginado');
-          const paginatedResponse: PaginatedResponse = {
-            users: response,
-            total: response.length,
-            page: page,
-            per_page: perPage,
-            total_pages: Math.ceil(response.length / perPage)
-          };
-          return paginatedResponse;
-        }
-        
-        // Si es un objeto pero no tiene el formato esperado
-        if (response && typeof response === 'object') {
-          console.warn('Respuesta es un objeto pero sin formato esperado:', response);
-          
-          // Intentar extraer users si existe como propiedad
-          const users = response.users || response.data || response.results || [response];
-          const usersArray = Array.isArray(users) ? users : [users];
-          
-          return {
-            users: usersArray,
-            total: usersArray.length,
-            page: page,
-            per_page: perPage,
-            total_pages: Math.ceil(usersArray.length / perPage)
-          };
-        }
-        
-        // Si no se pudo interpretar
-        console.error('No se pudo interpretar la respuesta:', response);
-        return {
-          users: [],
-          total: 0,
-          page: page,
-          per_page: perPage,
-          total_pages: 0
-        };
-      }),
-      tap(processedResponse => {
-        console.log('Respuesta procesada:', processedResponse);
-        console.log(`Total usuarios: ${processedResponse.users.length}, Página: ${processedResponse.page}/${processedResponse.total_pages}`);
-      }),
-      catchError(this.handleError)
-    );
+    return this.http.get<PaginatedResponse<Usuario> | Usuario[]>(this.apiUrl, { params })
+      .pipe(
+        retry(1),
+        catchError(this.handleError)
+      );
   }
 
-  // Obtener un usuario por ID
+  /**
+   * Obtiene un usuario por su ID
+   * @param id ID del usuario
+   * @returns Observable con el usuario
+   */
   getUsuario(id: number): Observable<Usuario> {
-    return this.http.get<Usuario>(`${this.apiUrl}/${id}`).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.get<Usuario>(`${this.apiUrl}/${id}`)
+      .pipe(
+        retry(1),
+        catchError(this.handleError)
+      );
   }
 
-  // Crear un nuevo usuario
+  /**
+   * Crea un nuevo usuario
+   * @param usuario Datos del nuevo usuario
+   * @returns Observable con el usuario creado
+   */
   createUsuario(usuario: Usuario): Observable<Usuario> {
-    return this.http.post<Usuario>(this.apiUrl, usuario).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.post<Usuario>(this.apiUrl, usuario)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
-  // Actualizar un usuario existente
-  updateUsuario(id: number, usuario: Usuario): Observable<Usuario> {
-    return this.http.put<Usuario>(`${this.apiUrl}/${id}`, usuario).pipe(
-      catchError(this.handleError)
-    );
+  /**
+   * Actualiza un usuario existente
+   * @param id ID del usuario a actualizar
+   * @param usuario Datos actualizados
+   * @returns Observable con el usuario actualizado
+   */
+  updateUsuario(id: number, usuario: Partial<Usuario>): Observable<Usuario> {
+    return this.http.put<Usuario>(`${this.apiUrl}/${id}`, usuario)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
-  // Eliminar un usuario
+  /**
+   * Elimina un usuario
+   * @param id ID del usuario a eliminar
+   * @returns Observable con la respuesta de eliminación
+   */
   deleteUsuario(id: number): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/${id}`).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.delete(`${this.apiUrl}/${id}`)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
+  /**
+   * Manejo centralizado de errores HTTP
+   */
   private handleError(error: HttpErrorResponse) {
-    console.error('Error detallado de la API:', error);
+    let errorMessage = 'Ha ocurrido un error desconocido';
     
-    let errorMessage = 'Error desconocido';
     if (error.error instanceof ErrorEvent) {
       // Error del lado del cliente
       errorMessage = `Error: ${error.error.message}`;
     } else {
       // Error del lado del servidor
-      errorMessage = `Código de error: ${error.status}\nMensaje: ${error.message}`;
+      errorMessage = `Código de error: ${error.status}, mensaje: ${error.message}`;
       
-      if (error.status === 0) {
-        errorMessage = 'No se pudo conectar al servidor. Verifica que el servidor backend esté corriendo.';
-      } else if (error.status === 404) {
-        errorMessage = 'Ruta de API no encontrada. Verifica la URL del backend.';
+      // Mensajes personalizados según código de error
+      if (error.status === 404) {
+        errorMessage = 'Recurso no encontrado';
+      } else if (error.status === 401) {
+        errorMessage = 'No autorizado';
+      } else if (error.status === 403) {
+        errorMessage = 'Acceso prohibido';
+      } else if (error.status === 500) {
+        errorMessage = 'Error interno del servidor';
       }
     }
     

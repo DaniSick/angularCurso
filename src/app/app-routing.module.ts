@@ -8,7 +8,10 @@ import { BasicUsersTableComponent } from './basic-users-table.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'users', pathMatch: 'full' },
-  { path: 'users', component: AppComponent },
+  { 
+    path: 'users', 
+    component: AppComponent 
+  },
   { path: 'basic-table', component: BasicUsersTableComponent },
   { path: 'simple-test', component: SimpleDataTestComponent },
   { path: 'api-checker', component: SimpleApiCheckerComponent },
